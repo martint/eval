@@ -203,6 +203,24 @@ public class BenchmarkEval
         return new Object[] {data.result, data.resultNullByte, data.tempPositions1};
     }
 
+    @Benchmark
+    public Object[] columnarMethodHandles(TpchData data)
+            throws Throwable
+    {
+        ColumnarMethodHandles.evaluate(
+                data.positions,
+                data.inputPositions,
+                data.shipDate,
+                data.shipDatePositions,
+                data.discount,
+                data.quantity,
+                data.extendedPrice,
+                data.result,
+                data.tempPositions1);
+
+        return new Object[] {data.result, data.resultNullByte, data.tempPositions1};
+    }
+
     public static void main(String[] args)
             throws RunnerException
     {
