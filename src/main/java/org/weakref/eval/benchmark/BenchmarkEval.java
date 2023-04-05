@@ -24,13 +24,17 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.weakref.eval.core.Columnar;
 import org.weakref.eval.core.ColumnarActivePositionsNoNulls;
 import org.weakref.eval.core.ColumnarActivePositionsNoNullsInPlace;
+import org.weakref.eval.core.ColumnarAdaptive;
+import org.weakref.eval.core.ColumnarMaskAndPositions;
 import org.weakref.eval.core.ColumnarMethodHandles;
 import org.weakref.eval.core.ColumnarNoNulls;
+import org.weakref.eval.core.ColumnarNoNullsBM;
 import org.weakref.eval.core.ColumnarVector;
 import org.weakref.eval.core.Naive;
 import org.weakref.eval.core.Row;
 import org.weakref.eval.core.RowNoNulls;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
@@ -147,6 +151,24 @@ public class BenchmarkEval
     }
 
     @Benchmark
+    public Object[] columnarNoNullsBM(TpchData data)
+    {
+        ColumnarNoNullsBM.evaluate(
+                data.positions,
+                data.inputMaskBM,
+                data.shipDate,
+                data.shipDatePositions,
+                data.discount,
+                data.quantity,
+                data.extendedPrice,
+                data.result,
+                data.resultMaskBM
+        );
+
+        return new Object[] {data.result, data.resultNullByte, data.resultMaskByte};
+    }
+
+    @Benchmark
     public Object[] columnarVector(TpchData data)
     {
         ColumnarVector.evaluate(
@@ -219,6 +241,53 @@ public class BenchmarkEval
                 data.tempPositions1);
 
         return new Object[] {data.result, data.resultNullByte, data.tempPositions1};
+    }
+
+    @Benchmark
+    public Object[] columnarAdaptive(TpchData data)
+            throws Throwable
+    {
+        ColumnarAdaptive.evaluate(
+                data.positions,
+                data.inputPositions,
+                data.shipDate,
+                data.shipDatePositions,
+                data.discount,
+                data.quantity,
+                data.extendedPrice,
+                data.result,
+                data.tempPositions1);
+
+        return new Object[] {data.result, data.resultNullByte, data.tempPositions1};
+    }
+
+    @Benchmark
+    public Object[] columnarMasksAndPositions(TpchData data)
+            throws Throwable
+    {
+        ColumnarMaskAndPositions.evaluate(
+                data.positions,
+                data.inputPositions,
+                data.shipDate,
+                data.shipDatePositions,
+                data.discount,
+                data.quantity,
+                data.extendedPrice,
+                data.result,
+                data.tempPositions1,
+                data.resultMaskByte);
+
+        return new Object[] {data.result, data.resultNullByte, data.tempPositions1};
+    }
+
+//    @Test
+    public void test()
+            throws IOException
+    {
+        TpchData data = new TpchData();
+        data.initialize();
+
+        columnarNoNullsBM(data);
     }
 
     public static void main(String[] args)

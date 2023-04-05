@@ -15,15 +15,21 @@ package org.weakref.eval.benchmark;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.RunnerException;
+import org.weakref.eval.proto.mask.DenseMask;
+import org.weakref.eval.proto.mask.DenseVectorized;
+import org.weakref.eval.proto.mask.Masks;
+import org.weakref.eval.proto.mask.SparseMask;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,58 +40,57 @@ import static org.weakref.eval.benchmark.BenchmarkRunner.benchmark;
 @Fork(value = 1, jvmArgsAppend = {
         "--add-modules=jdk.incubator.vector",
         "-XX:+UnlockDiagnosticVMOptions",
-        "-XX:CompileCommand=print,*core*.*",
-        "-XX:PrintAssemblyOptions=intel"})
-@Warmup(iterations = 10)
-@Measurement(iterations = 10)
-public class BenchmarkFlatVsCompactMask
+//        "-XX:CompileCommand=print,*core*.*",
+//        "-XX:PrintAssemblyOptions=intel"
+})
+@Warmup(iterations = 10, timeUnit = TimeUnit.MILLISECONDS, time = 500)
+@Measurement(iterations = 10, timeUnit = TimeUnit.MILLISECONDS, time = 500)
+@State(Scope.Thread)
+public class BenchmarkMasks
 {
-    @State(Scope.Thread)
-    public static class Positions
+    private final static int POSITIONS = 1024;
+
+    @Param({"0", "0.01", "0.1", "0.5", "1"})
+    public double selectivity = 0.5;
+
+    private DenseMask dense;
+    private DenseVectorized denseVectorized;
+    private SparseMask sparse;
+
+    @Setup
+    public void setup()
     {
-        @Param({"1000", "2000", "3000", "4000", "5000", "6000", "7000", "8000", "9000", "10000"})
-        public int positions;
+        dense = Masks.randomDenseMask(POSITIONS, selectivity);
+        denseVectorized = dense.toVectorized();
+        sparse = dense.toSparse();
     }
 
     @Benchmark
-    public Object flat(TpchData data, Positions positions)
+    public void dense()
     {
-        test(positions.positions, data.inputMask, data.resultMaskByte, data.discountNullByte);
-
-        return data.resultMaskByte;
+        dense.forEach(this::consume);
     }
 
     @Benchmark
-    public Object compact(TpchData data, Positions positions)
+    public void denseVectorized()
     {
-        test(positions.positions, data.inputPositions, data.tempPositions1, data.discountNullByte);
-
-        return data.tempPositions1;
+        denseVectorized.forEach(this::consume);
     }
 
-    private static void test(int positions, byte[] inputMask, byte[] outputMask, byte[] nulls)
+    @Benchmark
+    public void sparse()
     {
-        for (int i = 0; i < positions; i++) {
-            int selected = inputMask[i] & (nulls[i] == 1 ? 1 : 0);
-            outputMask[i] = (byte) selected;
-        }
+        sparse.forEach(this::consume);
     }
 
-    private static int test(int positions, int[] inputPositions, int[] outputPositions, byte[] nulls)
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void consume(int position)
     {
-        int output = 0;
-        for (int i = 0; i < positions; i++) {
-            int position = inputPositions[i];
-            outputPositions[output] = position;
-            output += (nulls[position] == 1) ? 1 : 0;
-        }
-
-        return output;
     }
 
     public static void main(String[] args)
             throws RunnerException
     {
-        benchmark(BenchmarkFlatVsCompactMask.class);
+        benchmark(BenchmarkMasks.class);
     }
 }

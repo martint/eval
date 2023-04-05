@@ -8,18 +8,21 @@
     <version>1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>xxhash64</name>
+    <name>eval</name>
 
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>112</version>
+        <version>128</version>
     </parent>
 
     <properties>
         <air.check.skip-pmd>true</air.check.skip-pmd>
-        <dep.airlift.version>208</dep.airlift.version>
-        <version>1.33</version>
+        <dep.airlift.version>218</dep.airlift.version>
+        <project.build.targetJdk>20</project.build.targetJdk>
+        <air.check.skip-checkstyle>true</air.check.skip-checkstyle>
+        <air.check.skip-all>true</air.check.skip-all>
+        <dep.jmh.version>1.35</dep.jmh.version>
     </properties>
 
     <dependencyManagement>
@@ -62,11 +65,6 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
@@ -76,9 +74,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <release>17</release>
-                    <compilerArgs>--enable-preview
-                        <arg>--add-modules=jdk.incubator.foreign</arg>
+                    <release>19</release>
+                    <compilerArgs>
+                        <arg>--enable-preview</arg>
                         <arg>--add-modules=jdk.incubator.vector</arg>
                     </compilerArgs>
                 </configuration>

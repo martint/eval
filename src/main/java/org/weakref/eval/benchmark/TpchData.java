@@ -31,6 +31,7 @@ public class TpchData
     public int positions;
     public int[] inputPositions;
     public byte[] inputMask;
+    public long[] inputMaskBM;
 
     public long[] discount;
     public boolean[] discountNull;
@@ -54,6 +55,7 @@ public class TpchData
     public byte[] resultNullByte;
     public boolean[] resultMask;
     public byte[] resultMaskByte;
+    public long[] resultMaskBM;
 
     public int[] tempPositions1;
     public int[] tempPositions2;
@@ -62,7 +64,7 @@ public class TpchData
     public void initialize()
             throws IOException
     {
-        positions = 10_000;
+        positions = 10_240;
 
         inputPositions = new int[positions];
         for (int i = 0; i < positions; i++) {
@@ -71,6 +73,9 @@ public class TpchData
 
         inputMask = new byte[positions];
         Arrays.fill(inputMask, (byte) 1);
+
+        inputMaskBM = new long[Math.floorDiv(positions, 64) + 1];
+        Arrays.fill(inputMaskBM, 0xffffffffffffffffL);
 
         tempPositions1 = new int[positions];
         for (int i = 0; i < positions; i++) {
@@ -131,5 +136,6 @@ public class TpchData
 
         resultMask = new boolean[positions];
         resultMaskByte = new byte[positions];
+        resultMaskBM = new long[Math.floorDiv(positions, 64) + 1];
     }
 }

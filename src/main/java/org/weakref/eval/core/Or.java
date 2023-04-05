@@ -21,7 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
 
-public class ColumnarMethodHandles
+public class Or
 {
     private static final byte[] MIN_SHIP_DATE_BYTES = "1994-01-01".getBytes();
     private static final byte[] MAX_SHIP_DATE_BYTES = "1995-01-01".getBytes();
@@ -32,41 +32,41 @@ public class ColumnarMethodHandles
     public static final MethodHandle BYTES_VECTOR_GREATER_THAN_OR_EQUAL;
     public static final MethodHandle BYTES_VECTOR_LESS_THAN;
 
+    public static final MethodHandle LONG_GREATER_THAN_OR_EQUAL;
+    public static final MethodHandle LONG_LESS_THAN_OR_EQUAL;
+    public static final MethodHandle LONG_LESS_THAN;
+    public static final MethodHandle BYTES_GREATER_THAN_OR_EQUAL;
+    public static final MethodHandle BYTES_LESS_THAN;
 
     static {
         try {
-            MethodHandle LONG_GREATER_THAN_OR_EQUAL;
-            MethodHandle LONG_LESS_THAN_OR_EQUAL;
-            MethodHandle LONG_LESS_THAN;
-            MethodHandle BYTES_GREATER_THAN_OR_EQUAL;
-            MethodHandle BYTES_LESS_THAN;
             LONG_GREATER_THAN_OR_EQUAL = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    Or.class,
                     "greaterThanOrEqual",
                     MethodType.methodType(boolean.class, long.class, long.class));
 
             LONG_LESS_THAN_OR_EQUAL = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    Or.class,
                     "lessThanOrEqual",
                     MethodType.methodType(boolean.class, long.class, long.class));
 
             LONG_LESS_THAN = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    Or.class,
                     "lessThan",
                     MethodType.methodType(boolean.class, long.class, long.class));
 
             BYTES_LESS_THAN = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    Or.class,
                     "lessThan",
                     MethodType.methodType(boolean.class, byte[].class, int.class, int.class, byte[].class));
 
             BYTES_GREATER_THAN_OR_EQUAL = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    Or.class,
                     "greaterThanOrEqual",
                     MethodType.methodType(boolean.class, byte[].class, int.class, int.class, byte[].class));
 
             MethodHandle applyLong = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    Or.class,
                     "apply",
                     MethodType.methodType(int.class, MethodHandle.class, int.class, int[].class, long[].class, long.class));
 
@@ -75,7 +75,7 @@ public class ColumnarMethodHandles
             LONG_VECTOR_LESS_THAN = applyLong.bindTo(LONG_LESS_THAN);
 
             MethodHandle applyBytes = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    Or.class,
                     "apply",
                     MethodType.methodType(int.class, MethodHandle.class, int.class, int[].class, byte[].class, int[].class, byte[].class));
 

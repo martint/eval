@@ -41,8 +41,8 @@ public class ColumnarActivePositionsNoNullsInPlace
         count = greaterOrEqual(count, tempActivePositions, discount, 5);
         count = lessOrEqual(count, tempActivePositions, discount, 7);
         count = less(count, tempActivePositions, quantity, 24);
-        count = greaterOrEqual(count, tempActivePositions, shipDate, shipDatePositions, MIN_SHIP_DATE_BYTES);
         count = less(count, tempActivePositions, shipDate, shipDatePositions, MAX_SHIP_DATE_BYTES);
+        count = greaterOrEqual(count, tempActivePositions, shipDate, shipDatePositions, MIN_SHIP_DATE_BYTES);
 
         product(count, tempActivePositions, result, discount, extendedPrice);
     }

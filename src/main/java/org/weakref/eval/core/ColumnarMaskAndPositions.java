@@ -21,7 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
 
-public class ColumnarMethodHandles
+public class ColumnarMaskAndPositions
 {
     private static final byte[] MIN_SHIP_DATE_BYTES = "1994-01-01".getBytes();
     private static final byte[] MAX_SHIP_DATE_BYTES = "1995-01-01".getBytes();
@@ -32,52 +32,52 @@ public class ColumnarMethodHandles
     public static final MethodHandle BYTES_VECTOR_GREATER_THAN_OR_EQUAL;
     public static final MethodHandle BYTES_VECTOR_LESS_THAN;
 
+    public static final MethodHandle LONG_GREATER_THAN_OR_EQUAL;
+    public static final MethodHandle LONG_LESS_THAN_OR_EQUAL;
+    public static final MethodHandle LONG_LESS_THAN;
+    public static final MethodHandle BYTES_GREATER_THAN_OR_EQUAL;
+    public static final MethodHandle BYTES_LESS_THAN;
 
     static {
         try {
-            MethodHandle LONG_GREATER_THAN_OR_EQUAL;
-            MethodHandle LONG_LESS_THAN_OR_EQUAL;
-            MethodHandle LONG_LESS_THAN;
-            MethodHandle BYTES_GREATER_THAN_OR_EQUAL;
-            MethodHandle BYTES_LESS_THAN;
             LONG_GREATER_THAN_OR_EQUAL = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarMaskAndPositions.class,
                     "greaterThanOrEqual",
                     MethodType.methodType(boolean.class, long.class, long.class));
 
             LONG_LESS_THAN_OR_EQUAL = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarMaskAndPositions.class,
                     "lessThanOrEqual",
                     MethodType.methodType(boolean.class, long.class, long.class));
 
             LONG_LESS_THAN = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarMaskAndPositions.class,
                     "lessThan",
                     MethodType.methodType(boolean.class, long.class, long.class));
 
             BYTES_LESS_THAN = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarMaskAndPositions.class,
                     "lessThan",
                     MethodType.methodType(boolean.class, byte[].class, int.class, int.class, byte[].class));
 
             BYTES_GREATER_THAN_OR_EQUAL = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarMaskAndPositions.class,
                     "greaterThanOrEqual",
                     MethodType.methodType(boolean.class, byte[].class, int.class, int.class, byte[].class));
 
             MethodHandle applyLong = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarMaskAndPositions.class,
                     "apply",
-                    MethodType.methodType(int.class, MethodHandle.class, int.class, int[].class, long[].class, long.class));
+                    MethodType.methodType(int.class, MethodHandle.class, int.class, int[].class, byte[].class, long[].class, long.class));
 
             LONG_VECTOR_GREATER_THAN_OR_EQUAL = applyLong.bindTo(LONG_GREATER_THAN_OR_EQUAL);
             LONG_VECTOR_LESS_THAN_OR_EQUAL = applyLong.bindTo(LONG_LESS_THAN_OR_EQUAL);
             LONG_VECTOR_LESS_THAN = applyLong.bindTo(LONG_LESS_THAN);
 
             MethodHandle applyBytes = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarMaskAndPositions.class,
                     "apply",
-                    MethodType.methodType(int.class, MethodHandle.class, int.class, int[].class, byte[].class, int[].class, byte[].class));
+                    MethodType.methodType(int.class, MethodHandle.class, int.class, int[].class, byte[].class, byte[].class, int[].class, byte[].class));
 
             BYTES_VECTOR_GREATER_THAN_OR_EQUAL = applyBytes.bindTo(BYTES_GREATER_THAN_OR_EQUAL);
             BYTES_VECTOR_LESS_THAN = applyBytes.bindTo(BYTES_LESS_THAN);
@@ -97,44 +97,49 @@ public class ColumnarMethodHandles
             long[] quantity,
             long[] extendedPrice,
             long[] result,
-            int[] tempActivePositions)
+            int[] tempActivePositions,
+            byte[] resultMask)
             throws Throwable
     {
         System.arraycopy(inputPositions, 0, tempActivePositions, 0, count);
+        Arrays.fill(result, 1);
 
-        count = (int) LONG_VECTOR_GREATER_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, discount, 5L);
-        count = (int) LONG_VECTOR_LESS_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, discount, 7L);
-        count = (int) LONG_VECTOR_LESS_THAN.invokeExact(count, tempActivePositions, quantity, 24L);
+        count = (int) LONG_VECTOR_GREATER_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, resultMask, discount, 5L);
+        count = (int) LONG_VECTOR_LESS_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, resultMask, discount, 7L);
+        count = (int) LONG_VECTOR_LESS_THAN.invokeExact(count, tempActivePositions, resultMask, quantity, 24L);
 
-        count = (int) BYTES_VECTOR_GREATER_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, shipDate, shipDatePositions, MIN_SHIP_DATE_BYTES);
-        count = (int) BYTES_VECTOR_LESS_THAN.invokeExact(count, tempActivePositions, shipDate, shipDatePositions, MAX_SHIP_DATE_BYTES);
+        count = (int) BYTES_VECTOR_GREATER_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, resultMask, shipDate, shipDatePositions, MIN_SHIP_DATE_BYTES);
+        count = (int) BYTES_VECTOR_LESS_THAN.invokeExact(count, tempActivePositions, resultMask, shipDate, shipDatePositions, MAX_SHIP_DATE_BYTES);
 
         product(count, tempActivePositions, result, discount, extendedPrice);
     }
 
-    private static int apply(MethodHandle function, int count, int[] activePositions, byte[] values, int[] offsets, byte[] value)
+    private static int apply(MethodHandle function, int count, int[] activePositions, byte[] resultMask, byte[] values, int[] offsets, byte[] value)
             throws Throwable
     {
         int output = 0;
         for (int input = 0; input < count; input++) {
             int position = activePositions[input];
             activePositions[output] = position;
-            output += (boolean) function.invokeExact(values, offsets[position], offsets[position + 1], value) ? 1 : 0;
+            boolean match = (boolean) function.invokeExact(values, offsets[position], offsets[position + 1], value);
+            output += match ? 1 : 0;
+            resultMask[input] = (byte) (resultMask[input] & (match ? 1 : 0));
         }
 
         return output;
     }
 
 
-    private static int apply(MethodHandle function, int count, int[] activePositions, long[] values, long value)
+    private static int apply(MethodHandle function, int count, int[] activePositions, byte[] resultMask, long[] values, long value)
             throws Throwable
     {
         int output = 0;
         for (int input = 0; input < count; input++) {
             int position = activePositions[input];
             activePositions[output] = position;
-            boolean result = (boolean) function.invokeExact(values[position], value);
-            output += result ? 1 : 0;
+            boolean match = (boolean) function.invokeExact(values[position], value);
+            output += match ? 1 : 0;
+            resultMask[input] = (byte) (resultMask[input] & (match ? 1 : 0));
         }
 
         return output;
@@ -188,6 +193,7 @@ public class ColumnarMethodHandles
                 data.quantity,
                 data.extendedPrice,
                 data.result,
-                data.tempPositions1);
+                data.tempPositions1,
+                data.resultMaskByte);
     }
 }

@@ -21,7 +21,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
 
-public class ColumnarMethodHandles
+import static java.lang.String.format;
+
+public class ColumnarAdaptive
 {
     private static final byte[] MIN_SHIP_DATE_BYTES = "1994-01-01".getBytes();
     private static final byte[] MAX_SHIP_DATE_BYTES = "1995-01-01".getBytes();
@@ -32,41 +34,41 @@ public class ColumnarMethodHandles
     public static final MethodHandle BYTES_VECTOR_GREATER_THAN_OR_EQUAL;
     public static final MethodHandle BYTES_VECTOR_LESS_THAN;
 
+    public static final MethodHandle LONG_GREATER_THAN_OR_EQUAL;
+    public static final MethodHandle LONG_LESS_THAN_OR_EQUAL;
+    public static final MethodHandle LONG_LESS_THAN;
+    public static final MethodHandle BYTES_GREATER_THAN_OR_EQUAL;
+    public static final MethodHandle BYTES_LESS_THAN;
 
     static {
         try {
-            MethodHandle LONG_GREATER_THAN_OR_EQUAL;
-            MethodHandle LONG_LESS_THAN_OR_EQUAL;
-            MethodHandle LONG_LESS_THAN;
-            MethodHandle BYTES_GREATER_THAN_OR_EQUAL;
-            MethodHandle BYTES_LESS_THAN;
             LONG_GREATER_THAN_OR_EQUAL = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarAdaptive.class,
                     "greaterThanOrEqual",
                     MethodType.methodType(boolean.class, long.class, long.class));
 
             LONG_LESS_THAN_OR_EQUAL = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarAdaptive.class,
                     "lessThanOrEqual",
                     MethodType.methodType(boolean.class, long.class, long.class));
 
             LONG_LESS_THAN = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarAdaptive.class,
                     "lessThan",
                     MethodType.methodType(boolean.class, long.class, long.class));
 
             BYTES_LESS_THAN = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarAdaptive.class,
                     "lessThan",
                     MethodType.methodType(boolean.class, byte[].class, int.class, int.class, byte[].class));
 
             BYTES_GREATER_THAN_OR_EQUAL = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarAdaptive.class,
                     "greaterThanOrEqual",
                     MethodType.methodType(boolean.class, byte[].class, int.class, int.class, byte[].class));
 
             MethodHandle applyLong = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarAdaptive.class,
                     "apply",
                     MethodType.methodType(int.class, MethodHandle.class, int.class, int[].class, long[].class, long.class));
 
@@ -75,7 +77,7 @@ public class ColumnarMethodHandles
             LONG_VECTOR_LESS_THAN = applyLong.bindTo(LONG_LESS_THAN);
 
             MethodHandle applyBytes = MethodHandles.lookup().findStatic(
-                    ColumnarMethodHandles.class,
+                    ColumnarAdaptive.class,
                     "apply",
                     MethodType.methodType(int.class, MethodHandle.class, int.class, int[].class, byte[].class, int[].class, byte[].class));
 
@@ -102,15 +104,81 @@ public class ColumnarMethodHandles
     {
         System.arraycopy(inputPositions, 0, tempActivePositions, 0, count);
 
+        count = (int) LONG_VECTOR_LESS_THAN.invokeExact(count, tempActivePositions, quantity, 24L);
         count = (int) LONG_VECTOR_GREATER_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, discount, 5L);
         count = (int) LONG_VECTOR_LESS_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, discount, 7L);
-        count = (int) LONG_VECTOR_LESS_THAN.invokeExact(count, tempActivePositions, quantity, 24L);
-
-        count = (int) BYTES_VECTOR_GREATER_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, shipDate, shipDatePositions, MIN_SHIP_DATE_BYTES);
         count = (int) BYTES_VECTOR_LESS_THAN.invokeExact(count, tempActivePositions, shipDate, shipDatePositions, MAX_SHIP_DATE_BYTES);
+        count = (int) BYTES_VECTOR_GREATER_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, shipDate, shipDatePositions, MIN_SHIP_DATE_BYTES);
 
         product(count, tempActivePositions, result, discount, extendedPrice);
     }
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public static void evaluate2(
+            int count,
+            int[] inputPositions,
+            byte[] shipDate,
+            int[] shipDatePositions,
+            long[] discount,
+            long[] quantity,
+            long[] extendedPrice,
+            long[] result,
+            int[] tempActivePositions)
+            throws Throwable
+    {
+        int c = count;
+        System.arraycopy(inputPositions, 0, tempActivePositions, 0, count);
+        int newCount;
+        long t0 = System.nanoTime();
+        newCount = (int) LONG_VECTOR_LESS_THAN.invokeExact(count, tempActivePositions, quantity, 24L);
+
+        C0 += count - newCount;
+        count = newCount;
+        count = c;
+
+        long t1 = System.nanoTime();
+        System.arraycopy(inputPositions, 0, tempActivePositions, 0, count);
+        newCount = (int) LONG_VECTOR_GREATER_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, discount, 5L);
+
+        C1 += count - newCount;
+        count = newCount;
+        count = c;
+
+        long t2 = System.nanoTime();
+        System.arraycopy(inputPositions, 0, tempActivePositions, 0, count);
+        newCount = (int) LONG_VECTOR_LESS_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, discount, 7L);
+        C2 += count - newCount;
+//        count = newCount;
+        count = c;
+
+        long t3 = System.nanoTime();
+        System.arraycopy(inputPositions, 0, tempActivePositions, 0, count);
+        newCount = (int) BYTES_VECTOR_LESS_THAN.invokeExact(count, tempActivePositions, shipDate, shipDatePositions, MAX_SHIP_DATE_BYTES);
+        C3 += count - newCount;
+//        count = newCount;
+        count = c;
+
+        long t4 = System.nanoTime();
+        System.arraycopy(inputPositions, 0, tempActivePositions, 0, count);
+        newCount = (int) BYTES_VECTOR_GREATER_THAN_OR_EQUAL.invokeExact(count, tempActivePositions, shipDate, shipDatePositions, MIN_SHIP_DATE_BYTES);
+        C4 += count - newCount;
+//        count = newCount;
+        count = c;
+
+        long t5 = System.nanoTime();
+
+        product(count, tempActivePositions, result, discount, extendedPrice);
+
+        D0 += t1 - t0;
+        D1 += t2 - t1;
+        D2 += t3 - t2;
+        D3 += t4 - t3;
+        D4 += t5 - t4;
+//        System.out.println(format("%d, %d, %d, %d, %d", t1 - t0, t2 - t1, t3 - t2, t4 - t3, t5 - t4));
+    }
+
+    static long D0, D1, D2, D3, D4;
+    static long C0, C1, C2, C3, C4;
 
     private static int apply(MethodHandle function, int count, int[] activePositions, byte[] values, int[] offsets, byte[] value)
             throws Throwable
@@ -124,7 +192,6 @@ public class ColumnarMethodHandles
 
         return output;
     }
-
 
     private static int apply(MethodHandle function, int count, int[] activePositions, long[] values, long value)
             throws Throwable
@@ -179,15 +246,23 @@ public class ColumnarMethodHandles
         TpchData data = new TpchData();
         data.initialize();
 
-        evaluate(
-                data.positions,
-                data.inputPositions,
-                data.shipDate,
-                data.shipDatePositions,
-                data.discount,
-                data.quantity,
-                data.extendedPrice,
-                data.result,
-                data.tempPositions1);
+        for (int i = 0; i < 100_000; i++) {
+            evaluate2(
+                    data.positions,
+                    data.inputPositions,
+                    data.shipDate,
+                    data.shipDatePositions,
+                    data.discount,
+                    data.quantity,
+                    data.extendedPrice,
+                    data.result,
+                    data.tempPositions1);
+        }
+
+        System.out.println(format("time = %.4f, dropped = %s, per dropped row = %s", D0 / 1e9, C0, D0 * 1.0 / C0));
+        System.out.println(format("time = %.4f, dropped = %s, per dropped row = %s", D1 / 1e9, C1, D1 * 1.0 / C1));
+        System.out.println(format("time = %.4f, dropped = %s, per dropped row = %s", D2 / 1e9, C2, D2 * 1.0 / C2));
+        System.out.println(format("time = %.4f, dropped = %s, per dropped row = %s", D3 / 1e9, C3, D3 * 1.0 / C3));
+        System.out.println(format("time = %.4f, dropped = %s, per dropped row = %s", D4 / 1e9, C4, D4 * 1.0 / C4));
     }
 }
