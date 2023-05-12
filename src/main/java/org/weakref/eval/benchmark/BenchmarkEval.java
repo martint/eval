@@ -44,8 +44,8 @@ import java.util.concurrent.TimeUnit;
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:CompileCommand=print,*core*.*",
         "-XX:PrintAssemblyOptions=intel"})
-@Warmup(iterations = 10)
-@Measurement(iterations = 10)
+@Warmup(iterations = 3, time = 2)
+@Measurement(iterations = 3, time = 2)
 public class BenchmarkEval
 {
     @Benchmark

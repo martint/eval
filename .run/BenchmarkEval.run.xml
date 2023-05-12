@@ -2,6 +2,7 @@
   <configuration default="false" name="BenchmarkEval" type="Application" factoryName="Application" nameIsGenerated="true">
     <option name="MAIN_CLASS_NAME" value="org.weakref.eval.benchmark.BenchmarkEval" />
     <module name="eval" />
+    <option name="VM_PARAMETERS" value="--enable-preview" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="org.weakref.eval.benchmark.*" />

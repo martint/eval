@@ -25,6 +25,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
+import static org.weakref.eval.kernel.MemorySegmentKernel.parseDate;
+
 @State(Scope.Thread)
 public class TpchData
 {
@@ -49,6 +51,7 @@ public class TpchData
     public byte[] shipDate;
     public boolean[] shipDateNull;
     public byte[] shipDateNullByte;
+    public int[] parsedShipDate;
 
     public long[] result;
     public boolean[] resultNull;
@@ -64,35 +67,6 @@ public class TpchData
     public void initialize()
             throws IOException
     {
-        positions = 10_240;
-
-        inputPositions = new int[positions];
-        for (int i = 0; i < positions; i++) {
-            inputPositions[i] = i;
-        }
-
-        inputMask = new byte[positions];
-        Arrays.fill(inputMask, (byte) 1);
-
-        inputMaskBM = new long[Math.floorDiv(positions, 64) + 1];
-        Arrays.fill(inputMaskBM, 0xffffffffffffffffL);
-
-        tempPositions1 = new int[positions];
-        for (int i = 0; i < positions; i++) {
-            tempPositions1[i] = i;
-        }
-
-        tempPositions2 = new int[positions];
-        for (int i = 0; i < positions; i++) {
-            tempPositions1[i] = i;
-        }
-
-        discount = new long[positions];
-        extendedPrice = new long[positions];
-        quantity = new long[positions];
-        shipDatePositions = new int[positions + 1];
-        shipDate = new byte[positions * 10];
-
         byte[] buffer = Files.readAllBytes(Paths.get("data.bin"));
         SliceInput input = new BasicSliceInput(Slices.wrappedBuffer(buffer));
 
@@ -127,7 +101,11 @@ public class TpchData
         }
 
         shipDate = new byte[shipDatePositions[positions]];
+        parsedShipDate = new int[positions];
         input.read(shipDate);
+        for (int i = 0; i < positions; i++) {
+            parsedShipDate[i] = parseDate(new String(Arrays.copyOfRange(shipDate, shipDatePositions[i], shipDatePositions[i + 1])));
+        }
 
         result = new long[positions];
 
@@ -137,5 +115,33 @@ public class TpchData
         resultMask = new boolean[positions];
         resultMaskByte = new byte[positions];
         resultMaskBM = new long[Math.floorDiv(positions, 64) + 1];
+
+        inputPositions = new int[positions];
+        for (int i = 0; i < positions; i++) {
+            inputPositions[i] = i;
+        }
+
+        inputMask = new byte[positions];
+        Arrays.fill(inputMask, (byte) 1);
+
+        inputMaskBM = new long[Math.floorDiv(positions, 64) + 1];
+        Arrays.fill(inputMaskBM, 0xffffffffffffffffL);
+
+        tempPositions1 = new int[positions];
+        for (int i = 0; i < positions; i++) {
+            tempPositions1[i] = i;
+        }
+
+        tempPositions2 = new int[positions];
+        for (int i = 0; i < positions; i++) {
+            tempPositions1[i] = i;
+        }
+
+        discount = new long[positions];
+        extendedPrice = new long[positions];
+        quantity = new long[positions];
+        shipDatePositions = new int[positions + 1];
+//        shipDate = new byte[positions * 10];
+
     }
 }
