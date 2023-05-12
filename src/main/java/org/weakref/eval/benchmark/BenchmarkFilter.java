@@ -23,6 +23,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.RunnerException;
 import org.weakref.eval.core.FilterRowArraysNoNulls;
 import org.weakref.eval.core.FilterRowArraysNoNullsVector;
+import org.weakref.eval.core.FilterRowArraysNoNullsVector2;
 import org.weakref.eval.core.FilterRowMsNoNulls;
 import org.weakref.eval.core.FilterRowNativeNoNulls;
 
@@ -40,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 1)
 public class BenchmarkFilter
 {
-//    @Benchmark
+    @Benchmark
     public byte[] array(TpchData data)
     {
         FilterRowArraysNoNulls.evaluate(
@@ -54,7 +55,7 @@ public class BenchmarkFilter
         return data.resultMaskByte;
     }
 
-//    @Benchmark
+    @Benchmark
     public MemorySegment heapMemorySegment(HeapMemorySegments data)
     {
         FilterRowMsNoNulls.evaluate(
@@ -68,7 +69,7 @@ public class BenchmarkFilter
         return data.resultMask;
     }
 
-//    @Benchmark
+    @Benchmark
     public MemorySegment nativeMemorySegment(NativeMemorySegments data)
     {
         FilterRowMsNoNulls.evaluate(
@@ -82,7 +83,7 @@ public class BenchmarkFilter
         return data.resultMask;
     }
 
-//    @Benchmark
+    @Benchmark
     public MemorySegment unsafeMemorySegment(UnsafeMemorySegments data)
     {
         FilterRowMsNoNulls.evaluate(
@@ -96,7 +97,7 @@ public class BenchmarkFilter
         return data.resultMask;
     }
 
-//    @Benchmark
+    @Benchmark
     public MemorySegment nativeFilter(NativeMemorySegments data)
     {
         FilterRowNativeNoNulls.evaluate(
@@ -111,7 +112,7 @@ public class BenchmarkFilter
     }
 
     @Benchmark
-    public byte[] vector(TpchData data)
+    public byte[] vectorComplex(TpchData data)
     {
         FilterRowArraysNoNullsVector.evaluate(
                 data.positions,
@@ -120,6 +121,22 @@ public class BenchmarkFilter
                 data.discount,
                 data.quantity,
                 data.resultMaskByte);
+
+        return data.resultMaskByte;
+    }
+
+    @Benchmark
+    public byte[] vector(TpchData data, Buffers buffers)
+    {
+        FilterRowArraysNoNullsVector2.evaluate(
+                data.positions,
+                data.inputMask,
+                data.parsedShipDate,
+                data.discount,
+                data.quantity,
+                data.resultMaskByte,
+                buffers.tempBoolean1,
+                buffers.tempBoolean2);
 
         return data.resultMaskByte;
     }

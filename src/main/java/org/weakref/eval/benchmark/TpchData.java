@@ -143,5 +143,6 @@ public class TpchData
         shipDatePositions = new int[positions + 1];
 //        shipDate = new byte[positions * 10];
 
+        positions = 1024;
     }
 }
